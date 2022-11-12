@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[16]:
 
 
 # start by importing some things we will need
@@ -12,8 +12,7 @@ from scipy.ndimage.filters import gaussian_filter
 from scipy.stats import entropy, multivariate_normal
 from math import floor, sqrt
 
-
-# In[ ]:
+# In[19]:
 
 
 # Now let's define the prior function. In this case we choose
@@ -26,8 +25,7 @@ def histogram_prior(belief, grid_spec, mean_0, cov_0):
     belief = RV.pdf(pos)
     return belief
 
-
-# In[ ]:
+# In[20]:
 
 
 # Now let's define the predict function
@@ -41,10 +39,30 @@ def histogram_predict(belief, dt, left_encoder_ticks, right_encoder_ticks, grid_
         v = 0.0 # replace this with a function that uses the encoder 
         w = 0.0 # replace this with a function that uses the encoder
         
+        R = robot_spec['wheel_radius']
+        L = robot_spec['wheel_baseline']
+        alpha = (2*np.pi)/robot_spec['encoder_resolution']
+        
+        
+        left_wheel_move = alpha * left_encoder_ticks * R
+        right_wheel_move = alpha * right_encoder_ticks * R
+        
+        dist_travel = (left_wheel_move + right_wheel_move)/2
+        
+        v = dist_travel/delta_t
+        w = (right_wheel_move - left_wheel_move)/(2*L*delta_t)
+        
+        #print((v*delta_t/grid_spec['delta_d']))
+        #print(w)
+        #input()
+        
         # TODO propagate each centroid forward using the kinematic function
-        d_t = grid_spec['d'] # replace this with something that adds the new odometry
-        phi_t = grid_spec['phi'] # replace this with something that adds the new odometry
-
+        
+        d_t = grid_spec['d']  + v*delta_t*np.sin(w)# replace this with something that adds the new odometry
+        phi_t = grid_spec['phi'] + w*delta_t# replace this with something that adds the new odometry
+        
+        # replace this with something that adds the new odometry
+        
         p_belief = np.zeros(belief.shape)
 
         # Accumulate the mass for each cell as a result of the propagation step
@@ -59,13 +77,18 @@ def histogram_predict(belief, dt, left_encoder_ticks, right_encoder_ticks, grid_
                         or phi_t[i, j] < grid_spec['phi_min']
                         or phi_t[i, j] > grid_spec['phi_max']
                     ):
+                        
                         continue
                     
                     # TODO Now find the cell where the new mass should be added
-                    i_new = i # replace with something that accounts for the movement of the robot
-                    j_new = j # replace with something that accounts for the movement of the robot
-
-                    p_belief[i_new, j_new] += belief[i, j]
+                    
+                    i_new = i  + int(np.floor( (v*delta_t*np.sin(w))/grid_spec['delta_d'])) # replace with something that accounts for the movement of the robot
+                    j_new = j + int(np.floor( (w*delta_t)/grid_spec['delta_phi']) ) # replace with something that accounts for the movement of the robot
+                    #i_new = i
+                    #j_new = j
+                    if j_new < p_belief.shape[1] and i_new < p_belief.shape[0] :
+                        p_belief[i_new, j_new] += belief[i, j]
+                        
 
         # Finally we are going to add some "noise" according to the process model noise
         # This is implemented as a Gaussian blur
@@ -78,7 +101,7 @@ def histogram_predict(belief, dt, left_encoder_ticks, right_encoder_ticks, grid_
         return belief
 
 
-# In[ ]:
+# In[21]:
 
 
 # We will start by doing a little bit of processing on the segments to remove anything that is behing the robot (why would it be behind?)
@@ -98,8 +121,7 @@ def prepare_segments(segments):
         filtered_segments.append(segment)
     return filtered_segments
 
-
-# In[ ]:
+# In[22]:
 
 
 
@@ -139,8 +161,7 @@ def generate_vote(segment, road_spec):
 
     return d_i, phi_i
 
-
-# In[ ]:
+# In[23]:
 
 
 def generate_measurement_likelihood(segments, road_spec, grid_spec):
@@ -156,11 +177,12 @@ def generate_measurement_likelihood(segments, road_spec, grid_spec):
             continue
 
         # TODO find the cell index that corresponds to the measurement d_i, phi_i
-        i = 1 # replace this
-        j = 1 # replace this
+        i = int((d_i - grid_spec['d_min'])/grid_spec['delta_d'])# replace this
+        j = int( (phi_i - grid_spec['phi_min'])/grid_spec['delta_phi']) # replace this
         
-        # Add one vote to that cell
-        measurement_likelihood[i, j] += 1
+        # Add one vote to that cell      
+        if i < measurement_likelihood.shape[0] and j < measurement_likelihood.shape[1]:
+            measurement_likelihood[i, j] += 1
 
     if np.linalg.norm(measurement_likelihood) == 0:
         return None
@@ -168,7 +190,7 @@ def generate_measurement_likelihood(segments, road_spec, grid_spec):
     return measurement_likelihood
 
 
-# In[ ]:
+# In[24]:
 
 
 def histogram_update(belief, segments, road_spec, grid_spec):
@@ -181,6 +203,15 @@ def histogram_update(belief, segments, road_spec, grid_spec):
     if measurement_likelihood is not None:
         # TODO: combine the prior belief and the measurement likelihood to get the posterior belief
         # Don't forget that you may need to normalize to ensure that the output is valid probability distribution
-        belief = measurement_likelihood # replace this with something that combines the belief and the measurement_likelihood
+        mean_0 = np.array([0,0])
+        cov_0 = np.array( [ [0.1,0], [0,0.1] ] )
+        #robot_spec = {}
+        #dt = 0.1
+        #belief = np.zeros(measurement_likelihood.shape)
+        #p_belief = histogram_prior(belief, grid_spec, mean_0, cov_0)
+        #p_belief = histogram_predict(belief, dt, left, right, grid_spec, robot_spec, cov_mask)
+        belief = belief*measurement_likelihood # replace this with something that combines the belief and the measurement_likelihood
+        
+        belief = belief / np.sum(belief)
     return (measurement_likelihood, belief)
 
