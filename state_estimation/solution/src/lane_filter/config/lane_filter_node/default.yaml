@@ -1,7 +1,7 @@
 # default parameters for lane_filter/lane_filter_node
 
 debug : True
-predict_frequency: 30.0 # in Hz
+predict_frequency: 90.0 # in Hz
 lane_filter_histogram_configuration:
   # ADD PARAMETERS HERE
   mean_d_0: 0
@@ -10,7 +10,7 @@ lane_filter_histogram_configuration:
   sigma_phi_0: 0.1
   delta_d: 0.02
   delta_phi: 0.1
-  d_max: 0.3
+  d_max: 0.30
   d_min: -0.15
   phi_min: -1.5
   phi_max: 1.5
