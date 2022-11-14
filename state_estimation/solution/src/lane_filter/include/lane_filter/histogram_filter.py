@@ -190,7 +190,7 @@ def generate_measurement_likelihood(segments, road_spec, grid_spec):
     return measurement_likelihood
 
 
-# In[44]:
+# In[86]:
 
 
 def histogram_update(belief, segments, road_spec, grid_spec):
@@ -219,11 +219,18 @@ def histogram_update(belief, segments, road_spec, grid_spec):
 #         measurement_likelihood /= np.sum(measurement_likelihood)
        
          
-            #RV = multivariate_normal([0,0],[[0.01,0],[0,0.01]])
-            #belief = RV.pdf(pos)
-       
-        belief = belief * measurement_likelihood # replace this with something that combines the belief and the measurement_likelihood    
-    
+        #x, y = np.meshgrid(np.linspace(-1, 1, kernel_size),np.linspace(-1, 1, kernel_size))\
+        #sigma = 12.0
+        #d, phi = np.mgrid[grid_spec['d_min'] : grid_spec['d_max'] : grid_spec['delta_d'], grid_spec['phi_min'] : grid_spec['phi_max'] : grid_spec['delta_phi']]
+        #dst = np.sqrt(d**2+phi**2)
+    # lower normal part of gaussian
+        #normal = 1/(2.0 * np.pi * sigma**2)
+    # Calculating Gaussian filter
+        #gauss = np.exp(-((dst)**2 / (2.0 * sigma**2))) * normal
+        
+        belief = np.multiply(belief, measurement_likelihood) # replace this with something that combines the belief and the measurement_likelihood    
+        #belief = np.multiply(belief, gauss)
+        
         if np.sum(belief) == 0:
             #RV = multivariate_normal([0,0],[[0.01,0],[0,0.01]])
             #belief = RV.pdf(pos)
@@ -231,9 +238,6 @@ def histogram_update(belief, segments, road_spec, grid_spec):
           
         belief = belief / np.sum(belief)
     
-    if np.sum(belief) == 0:
-        RV = multivariate_normal([0,0],[[0.1,0],[0,0.1]])
-        belief = RV.pdf(pos)
         
     return (measurement_likelihood, belief)
 

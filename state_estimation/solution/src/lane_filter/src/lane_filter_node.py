@@ -123,7 +123,7 @@ class LaneFilterNode(DTROS):
         self.left_encoder_ticks_delta = 0
         self.right_encoder_ticks_delta = 0
 
-        self.publishEstimate()
+        self.publishEstimate(self.last_update_stamp)
 
     def cbProcessSegments(self, segment_list_msg):
         """Callback to process the segments
@@ -141,9 +141,9 @@ class LaneFilterNode(DTROS):
         # Step 2: update
         self.filter.update(segment_list_msg.segments)
 
-        self.publishEstimate(segment_list_msg)
+        self.publishEstimate(segment_list_msg.header.stamp)
 
-    def publishEstimate(self, segment_list_msg=None):
+    def publishEstimate(self, timestamp):
 
         [d_max, phi_max] = self.filter.getEstimate()
         # print "d_max = ", d_max
@@ -151,7 +151,7 @@ class LaneFilterNode(DTROS):
 
         # build lane pose message to send
         lanePose = LanePose()
-        lanePose.header.stamp = segment_list_msg.header.stamp
+        lanePose.header.stamp = timestamp
         lanePose.d = d_max
         lanePose.phi = phi_max
         lanePose.in_lane = True
