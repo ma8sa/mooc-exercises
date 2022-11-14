@@ -25,7 +25,7 @@ def histogram_prior(belief, grid_spec, mean_0, cov_0):
     belief = RV.pdf(pos)
     return belief
 
-# In[23]:
+# In[111]:
 
 
 # Now let's define the predict function
@@ -82,8 +82,8 @@ def histogram_predict(belief, dt, left_encoder_ticks, right_encoder_ticks, grid_
                     
                     # TODO Now find the cell where the new mass should be added
                     
-                    i_new =  int(np.floor( (d_t[i,j]-grid_spec['d_min']) /grid_spec['delta_d'])) # replace with something that accounts for the movement of the ro
-                    j_new = int(np.floor((phi_t[i,j]-grid_spec['phi_min']) /grid_spec['delta_phi'])) # replace with something that accounts for the movement of the robot
+                    i_new =  i + int(np.floor( (v*np.sin(w)) /grid_spec['delta_d'])) # replace with something that accounts for the movement of the ro
+                    j_new = j+int(np.floor((w) /grid_spec['delta_phi'])) # replace with something that accounts for the movement of the robot
                     #i_new = i
                     #j_new = j
                     if j_new < p_belief.shape[1] and i_new < p_belief.shape[0] :
@@ -101,7 +101,7 @@ def histogram_predict(belief, dt, left_encoder_ticks, right_encoder_ticks, grid_
         return belief
 
 
-# In[24]:
+# In[112]:
 
 
 # We will start by doing a little bit of processing on the segments to remove anything that is behing the robot (why would it be behind?)
@@ -121,7 +121,7 @@ def prepare_segments(segments):
         filtered_segments.append(segment)
     return filtered_segments
 
-# In[25]:
+# In[113]:
 
 
 
@@ -161,7 +161,7 @@ def generate_vote(segment, road_spec):
 
     return d_i, phi_i
 
-# In[26]:
+# In[114]:
 
 
 def generate_measurement_likelihood(segments, road_spec, grid_spec):
@@ -190,7 +190,7 @@ def generate_measurement_likelihood(segments, road_spec, grid_spec):
     return measurement_likelihood
 
 
-# In[86]:
+# In[115]:
 
 
 def histogram_update(belief, segments, road_spec, grid_spec):
